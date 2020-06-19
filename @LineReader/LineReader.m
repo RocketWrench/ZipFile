@@ -78,7 +78,7 @@ classdef LineReader < handle
                 
                 line = char(this.LineNumberReader.readLine());
             catch ME
-                io.handleIOExceptions( ME );
+                io.Util.handleIOExceptions( ME );
             end
         end
         
