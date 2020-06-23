@@ -2,45 +2,48 @@ classdef Util
 
     properties(Constant = true)
         
-        EOCD             = uint8([80,75,5,6])
-        ZIP64_EOCD_LOC   = uint8([80,75,6,7])
-        ZIP64_EOCD_REC   = uint8([80,75,6,6])
-        CFH              = uint8([80,75,1,2])
-        LFH              = uint8([80,75,3,4])
-        DIGITAL          = uint8([80,75,5,5])
-        AED              = uint8([80,75,6,8])
-        DATA_DESCRIPTOR  = uint8([80,75,7,8]);
         
-        Z64_EXT_SIZE     = [8;8;8;4]; 
-        Z64_EXT_FIELD    = uint8([1,0]);
+        ZIP64_EOCD_LOC      = uint8([80;75;6;7]);
+        ZIP64_EOCD_REC      = uint8([80;75;6;6]);
+        CFH                 = uint8([80;75;1;2]);
+        LFH                 = uint8([80;75;3;4]);
+        EOCD                = uint8([80;75;5;6]);        
+        DATA_DESCRIPTOR     = uint8([80;75;7;8]);
+        DIGITAL             = uint8([80;75;5;5]);
+        AED                 = uint8([80;75;6;8]);
+
+        Z64_EXT_SIZE        = [8;8;8;4]; 
+        Z64_EXT_FIELD       = uint8([1;0]);
         
-        SHORT = uint8(2);
-        WORD = uint8(4);
-        DWORD = uint8(8);
-        MAGIC_NUMBER = uint32(65535);
-        ZIP64_MAGIC_SHORT = uint32(65535);        
-        ZIP64_EOCDL_LENGTH = uint32(20);
-        MIN_LENGTH = uint32(22);
-        MAX_LENGTH = 65535; 
+        SHORT               = uint8(2);
+        WORD                = uint8(4);
+        DWORD               = uint8(8);
+        MAGIC_NUMBER        = uint32(65535);
+        ZIP64_MAGIC_SHORT   = uint32(65535);        
+        ZIP64_EOCDL_LENGTH  = uint32(20);
+        MIN_LENGTH          = uint32(22);
+        MAX_LENGTH          = 65535; 
         
-        EOCD_CHUNK_SIZE = uint32([1,22]);
-        CFH_CHUNK_SIZE = uint32([1,46]);
-        Z64EOCDR_CHUNK_SIZE = uint32([1,56]);
-        Z64EOCDL_CHUNK_SIZE = uint32([1,20]);
-        LFH_CHUNK_SIZE = uint32([1,30]);
-        DIGITAL_CHUNK_SIZE = uint32([1,6]);
+        EOCD_CHUNK_SIZE     = uint32(22);
+        CFH_CHUNK_SIZE      = uint32(46);
+        Z64EOCDR_CHUNK_SIZE = uint32(56);
+        Z64EOCDL_CHUNK_SIZE = uint32(20);
+        LFH_CHUNK_SIZE      = uint32(30);
+        DIGITAL_CHUNK_SIZE  = uint32(6);
     end
     
     methods(Static = true)
-        
+%--------------------------------------------------------------------------         
         function bytes = hex2LongBytes( hexStr )
         % hex2bytes returns a row vector of uint8 bytes from a hex string
-            bytes = uint8(org.apache.commons.compress.archivers.zip.ZipLong.getBytes(hex2dec(hexStr))');
+%             bytes = uint8(org.apache.commons.compress.archivers.zip.ZipLong.getBytes(hex2dec(hexStr))');
+            bytes = typecast(uint32(hex2dec(hexStr)),'uint8');
         end  
 %--------------------------------------------------------------------------       
         function bytes = hex2ShortBytes( hexStr )
         % hex2bytes returns a row vector of uint8 bytes from a hex string
-            bytes = uint8(org.apache.commons.compress.archivers.zip.ZipShort.getBytes(hex2dec(hexStr))');
+%             bytes = uint8(org.apache.commons.compress.archivers.zip.ZipShort.getBytes(hex2dec(hexStr))');
+            bytes = typecast(uint16(hex2dec(hexStr)),'uint8');
         end        
 %--------------------------------------------------------------------------        
         function [status, position] = isa( bytes, strId )
@@ -58,6 +61,8 @@ classdef Util
                 status = false;
             end
         end
+%--------------------------------------------------------------------------
+        
 %--------------------------------------------------------------------------        
         function sig = get( strId )
 
@@ -276,7 +281,10 @@ classdef Util
 
             javaPaths = javaclasspath('-all');
             compressJarFiles = javaPaths(contains(javaPaths,'commons-compress'));
-%             compressJarFile = fullfile(matlabroot,'java','jarext','commons-compress.jar');
+            if isempty(compressJarFiles)
+                ver = 'Unkmown';
+                return
+            end
             numJarFiles = numel(compressJarFiles);
             ver = cell(1,numJarFiles);
             k = 1;
@@ -291,7 +299,7 @@ classdef Util
                     attribs = manifest.getMainAttributes();
                     ver{k} = char(attribs.getValue('Implementation-Version'));
                     k = k + 1;
-    %                 jarURLconnection.close();
+  
                 end
             end
             
@@ -317,104 +325,26 @@ classdef Util
             
             modes = savedModes;
             
-        end
-%--------------------------------------------------------------------------
-        function [status, newVals, msg] =...
-                parseZ64ExtendedInformationExtraField( bytes, neededFlags )
+        end 
+%-------------------------------------------------------------------------- 
+        function [ zipFile, fid, cleanUpObj ] = validateZipFile( zipFile )
             
-%             noBytes = numel(bytes);
-%             doLoop = true;
-%             fields = struct('ID',zeros([1,2],'uint8'),'Size',uint16(0),'Data',[]);
-%             k = 1;
-%             ptr = 1;
-%             while doLoop
-%                
-%                 fields(k).ID = bytes(ptr:ptr+1);
-%                 fsize = typecast(bytes(ptr+2:ptr+3),'uint16');
-%                 fields(k).Size = fsize;
-%                 fields(k).Data = bytes(ptr+4:ptr+4+fsize-1);
-%                 ptr = ptr + 4 + fsize;
-%                 k = k + 1;
-%                 doLoop = ptr < noBytes;
-%             end
+            % Open the file for reading
+            [fid,msg] = fopen(zipFile,'r');            
 
-            fields = io.Util.parseExtraData(bytes);
-
-            newVals = zeros([1,4],'uint64');
-            msg = [];
-            [status, pos] = io.Util.isa( bytes, 'z64ext' );
-            requiredSize = ( neededFlags * io.Util.Z64_EXT_SIZE) + 4;
-            fieldSize = typecast(bytes(pos+2:pos+3),'uint16');
-            if fieldSize > requiredSize
-                msg = 'The extra fields data is not large enough\n to contain the required Zip64 extra fields data';
-                return;
+            if fid < 3
+               ME = MException('getZipContents:badFile','Cannot read the file %s\nfoopen returned : %s',zipFile,msg);
+               throwAsCaller(ME);
             end
-            
-            if status
-                z64ExtDataBytes = bytes(pos+4:pos+4+fieldSize-1);
-                noBytesPerField = neededFlags .* io.Util.Z64_EXT_SIZE';
-                ptr = 1;
-                for itr = 1:4
-                    if neededFlags(itr)
-                        noBytes = noBytesPerField(itr);
-                        if noBytes == 8
-                            clazz = 'uint64';
-                        else
-                            clazz = 'uint32';
-                        end
-                        newVals(itr) = typecast(z64ExtDataBytes(ptr:ptr+noBytes-1),clazz);
-                        ptr = ptr + noBytes + 1;
-                    end
-                end
-                
-            else
-                msg = 'Could not locate the Zip 64 extended information extra field signature';
-            end
-            
-        end
-%--------------------------------------------------------------------------
-        function fields = parseExtraData( bytes, has4ByteDataSize )
-            
-            if nargin == 1
-                has4ByteDataSize = false;
-            end
-            
-            if ~has4ByteDataSize
-               
-                inc = 3;
-                clazz = 'uint16';
-            else
-                inc = 7;
-                clazz = 'uint32';
-            end
-        
-            noBytes = numel(bytes);
-            
-            if noBytes < 4
-                fields = [];
-                return
-            end
-            
-            doLoop = true;
-
-            k = 1;
-            ptr = 1;
-            while doLoop
-               
-                id = typecast(bytes(ptr:ptr+1),'uint16');
-                fsize = typecast(bytes(ptr+2:ptr+inc),clazz);
-                data = bytes(ptr+inc+1:ptr+inc+fsize);
-                switch id
-                    case 1
-                        fields(k) = io.Fields.Zip64ExtendedInformationExtraField(id,data); %#ok<AGROW>
-                    otherwise
-                        fields(k) = io.Fields.Field(id,data); %#ok<AGROW>
-                end
-                ptr = ptr + 4 + fsize;
-                k = k + 1;
-                doLoop = ptr < noBytes;
+            zipFile = fopen(fid);
+            cleanUpObj = onCleanup(@()fclose(fid));
+            % Check first 4 bytes of file for a 'lfh' signature. 
+            if ~io.Util.isa( fread(fid,4,'*uint8'), 'lfh' )
+               ME = MException('getZipContents:badLFH',...
+                   'The file, %s,\ndoes not start with a local file header signature\nIt may be a self-exctracting archive file or an empty zip file',zipFile); 
+               throwAsCaller(ME);
             end
         end
-    end
+    end    
 end
 

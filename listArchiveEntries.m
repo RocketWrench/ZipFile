@@ -1,4 +1,4 @@
-function listArchiveEntries( archiveFile )
+function list = listArchiveEntries( archiveFile )
 
 
     zipFile = org.apache.commons.compress.archivers.zip.ZipFile(java.io.File(archiveFile),[]);

@@ -8,7 +8,7 @@ classdef Field < matlab.mixin.Heterogeneous
     end
     properties(Access = protected)
         Id_(1,1) uint16
-        RawData_(1,:) uint8
+        RawData_(:,1) uint8
         Name_ = 'Generic'
     end
     

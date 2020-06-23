@@ -12,7 +12,7 @@ classdef GeneralPurposeBit
     
     properties(Access = private)
 
-        BITS = zeros([1,16],'uint8');
+        BITS = zeros([16,1],'uint8');
     end
     
     properties(Constant = true)
@@ -24,13 +24,7 @@ classdef GeneralPurposeBit
             
             if nargin
                 
-%                 if ~isa(gpb,'uint16')
-%                     
-%                     error('GeneralPurposeBit:BadInputValue',...
-%                         'Input must be of class uint16, instead it was %s',class(gpb));
-%                 end
-                
-                this.BITS = gpb;%logical(bitget(gpb,1:16,'uint16')');
+                this.BITS = gpb;
                 
             end
         end

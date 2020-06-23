@@ -43,7 +43,7 @@ classdef ZipFile <  handle
     end
     
     properties(Access = protected)
-        % Private archive file name, files and directories
+        % Private archive file name
         ArchiveFile_         (1,:) char =  '';        
         Files_               (:,1) cell;        
         Directories_         (:,1) cell;
@@ -52,11 +52,11 @@ classdef ZipFile <  handle
         FilesIndexMap        (:,1) double;
         % Array of io.Entry objects
         Entries              (:,1) io.Entry;
-        % Flag indicating wether to recreate the JavaZipFile object
+        % Flag indicating wether to recreate JavaZipFile
         resetJavaZipFile     (1,1) logical = true;      
         % Raw bytes (uint8) from digital signature
         RawDigitalSignature_ (:,1) uint8;        
-        % Array of supported decompress methods.
+        % Array of supported decompress methods supported
         SupportedModes_      (1,:) uint16;        
         % Archive comments
         ArchiveComments_     (1,:) char = ''; 
@@ -72,6 +72,7 @@ classdef ZipFile <  handle
         Zip64ExtensibleData_ = [];   
         % Current io.ZipFile version
         Version = '1.0.0';
+
     end
     
     methods
@@ -96,6 +97,7 @@ classdef ZipFile <  handle
             
            try this.JavaZipFile.close; catch; end 
         end
+
     end
     
     methods
@@ -119,7 +121,8 @@ classdef ZipFile <  handle
         
         function directories = get.Directories( this )
             directories = this.Directories_;
-        end 
+        end  
+
     end
     
     methods(Access = public)
@@ -205,9 +208,7 @@ classdef ZipFile <  handle
             
             inputStream = this.getInputStreamForImpl(entry);
         end
-        %==================================================================
-        % getURLFor - Get the URL for an entry
-        %==================================================================         
+        
         function URL = getURLFor( this, whichEntry )
             
             entries = this.getEntry(whichEntry,false);
@@ -221,9 +222,7 @@ classdef ZipFile <  handle
             end
             
         end
-        %==================================================================
-        % getAllImagesAsIcons - Get all images as ImageIcons
-        %==================================================================          
+        
         function icons = getAllImagesAsIcons( this )
             
             icons = [];
@@ -245,21 +244,15 @@ classdef ZipFile <  handle
             end
             
         end
-        %==================================================================
-        % getDigitalSignature - Get the raw digital signature
-        %==================================================================         
+        
         function digSig = getDigitalSignature( this )
             digSig = this.RawDigitalSignature_;
         end
-        %==================================================================
-        % getSupportedModes - Get an array of supported modes
-        %==================================================================         
+        
         function modes = getSupportedModes( this )
             modes = this.SupportedModes_;
         end
-        %==================================================================
-        % getComments - Get file comments
-        %==================================================================         
+        
         function comments = getComments( this )
             if isempty(this.ArchiveComments_)
                 comments = '';
@@ -267,16 +260,12 @@ classdef ZipFile <  handle
                 comments = this.ArchiveComments_;
             end
         end
-        %==================================================================
-        % getEntry - Get an entry or entries (io.Entry)
-        %==================================================================         
+        
         entries = getEntry( this, which, allowDirectories ) 
     end
 
     methods( Access = protected )
-        %==================================================================
-        % load - Retrive archive entries
-        %==================================================================         
+        
         function load( this, file )
 
             try
@@ -306,9 +295,7 @@ classdef ZipFile <  handle
             
             this.SupportedModes_ = io.Util.getSupportedModes;
         end
-        %==================================================================
-        % copyStream - Copies an inputstream to an outputstream
-        %================================================================== 
+
         function copyStream( this, inputStream, outputStream )
            
             if isempty(this.StreamCopier)
@@ -323,9 +310,7 @@ classdef ZipFile <  handle
             end
 
         end
-        %==================================================================
-        % getInputStreamForImpl - getInputStream implementation
-        %==================================================================         
+        
         function [ inputStream , msg ] = getInputStreamForImpl( this, entry )
             
             msg = true;
@@ -357,9 +342,7 @@ classdef ZipFile <  handle
                 end
             end           
         end
-        %==================================================================
-        % getReader - Gets a reader by type
-        %==================================================================        
+        
         function reader = getReader( this, entry, whichReader )
 
             [inputStream,msg] = this.getInputStreamForImpl(entry);
