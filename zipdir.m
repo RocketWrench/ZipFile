@@ -1,4 +1,6 @@
 function listing = zipdir( zipFileName )
+% zipdir - gets a listing of archive file contents
+
 
     narginchk(0,1);
     nargoutchk(0,1);
