@@ -33,7 +33,7 @@ function [noEntries, extraData, comments] = positionAtCentralDirectoryRecord( fi
     % ZIP_MAGIC_NUMBER = 65535 bytes.
     % See reference 4.4.12
     % TODO: Maybe faster just to read in MAGIC NUMBER of bytes and
-    % search for EOCD signature in that byte array, wuld depend on
+    % search for EOCD signature in that byte array, would depend on
     % length of comment field
     maxSearchLength = -min(fileLength,io.Util.MAX_LENGTH);
     while (~foundEOCDSig) && (eocdPos > maxSearchLength)
@@ -46,7 +46,7 @@ function [noEntries, extraData, comments] = positionAtCentralDirectoryRecord( fi
         ME = MException('getZipContents:NotAZip','Archive is not a ZIP archive or is corrupt.\nEnd of centeral directory signature could not be found');
         throwAsCaller(ME);
     end
-    % Reset to pointer back to start of EOCD and then read EOCD as
+    % Reset pointer back to start of EOCD and then read EOCD as a
     % block
     fseek(fid,eocdPos,'eof');
     [~,bytes] = io.Util.readChunk( fid, 'eocd'); 
@@ -64,10 +64,10 @@ function [noEntries, extraData, comments] = positionAtCentralDirectoryRecord( fi
     fseek(fid,eocdPos-double(io.Util.Z64EOCDL_CHUNK_SIZE),'eof');
     % Get ZIP64EOCD locator chunk
     [foundZ64EOCDLSig,Z64EOCDLBytes] = io.Util.readChunk(fid,'z64eocdl');
-    % If  Zip64 EOCDL is foune (ver 1/2 (?) format)
+    % If  Zip64 EOCDL is found (ver 1/2 (?) format)
     if foundZ64EOCDLSig
         % Read Zip64 end of central directory locator and set 
-        % pointer to Zip64 end central directory record, than parse
+        % pointer to Zip64 end central directory record, then parse
         % the record
         %
         offsetToZ64EOCDR = typecast(Z64EOCDLBytes(9:16),'uint64');

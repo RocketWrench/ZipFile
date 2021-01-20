@@ -61,8 +61,6 @@ classdef Util
                 status = false;
             end
         end
-%--------------------------------------------------------------------------
-        
 %--------------------------------------------------------------------------        
         function sig = get( strId )
 
@@ -156,6 +154,18 @@ classdef Util
 %--------------------------------------------------------------------------        
         function handleIOExceptions( ME )
             % TODOD: Meaningful error messages
+            if isa(ME,'java.io.IOException')
+                cause = char(ME.getCause());
+                if isempty(cause)
+                    cause = 'Unkown cause';
+                end
+                message = char(ME.getMessage);
+                if isempty(message)
+                    message = 'No details';
+                end
+                
+                ME = MException('IOException','%s\n%s',cause,message);
+            end
             throwAsCaller(ME);
         end
 %--------------------------------------------------------------------------        
@@ -282,7 +292,7 @@ classdef Util
             javaPaths = javaclasspath('-all');
             compressJarFiles = javaPaths(contains(javaPaths,'commons-compress'));
             if isempty(compressJarFiles)
-                ver = 'Unkmown';
+                ver = 'Unknown';
                 return
             end
             numJarFiles = numel(compressJarFiles);

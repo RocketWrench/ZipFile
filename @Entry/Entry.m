@@ -1,25 +1,25 @@
 classdef Entry < handle
-    %UNTITLED2 Summary of this class goes here
-    %   Detailed explanation goes here
+% Entry Object representing a single entry in a zip archive file.
+%
     
     properties(Dependent = true)
         
-        MadeByZipVersion    (1,1) char = '';
-        MadeByPlatform      (1,1) char = '';
-        ExtractMinVersion   (1,1) char = '';
-        ExtractMinFeature   (1,1) char = '';
-        CanBeExtracted      (1,1) logical = true;
-        IsEncrypted         (1,1) logical = false;
-        IsStronglyEncrypted (1,1) logical = false;
-        UsesUTF8            (1,1) logical = false;
-        CompressionMethod   (1,:) char = '';
+        MadeByZipVersion    (1,1) char;
+        MadeByPlatform      (1,1) char;
+        ExtractMinVersion   (1,1) char;
+        ExtractMinFeature   (1,1) char;
+        CanBeExtracted      (1,1) logical;
+        IsEncrypted         (1,1) logical;
+        IsStronglyEncrypted (1,1) logical;
+        UsesUTF8            (1,1) logical;
+        CompressionMethod   (1,:) char;
         FileTimeStamp       (1,:) char;
         CompressedSize      (1,1) uint64
         UncompressedSize    (1,1) uint64
-        IsDirectory         (1,1) logucal = false;
-        IsTextFile          (1,1) logical = false;
-        Path                (1,:) char = '';
-        FileName            (1,1) char = '';
+        IsDirectory         (1,1) logucal;
+        IsTextFile          (1,1) logical;
+        Path                (1,:) char;
+        FileName            (1,:) char;
 
     end
     
@@ -93,43 +93,6 @@ classdef Entry < handle
                 throwAsCaller(ME)
             end
             
-            neededFlags = [B32(2),B32(3),B32(5),B16(9)] < 0;
-            
-            %fields = org.apache.commons.compress.archivers.zip.ExtraFieldUtils.parse(extraFields',false);
-            
-            if any(neededFlags)
-                if isempty(extraData)
-                     ME = MException('Entry:BadZip64Extra',...
-                        'The Zip64 extended information extra field is required, but not present'); 
-                    throwAsCaller(ME);                   
-                end
-                
-                this.ExtraFields_ = io.internal.parseExtraData(extraData);
-                z64ExtraFieldMask = ismember([this.ExtraFields_(:).Id],1);
-                
-                if sum(z64ExtraFieldMask) == 0
-                    ME = MException('Entry:BadZip64Extra',...
-                        'The Zip64 extended information extra field is required, but not present'); 
-                    throwAsCaller(ME);                
-                end
-                
-                z64ExtraField = this.ExtraFields_(z64ExtraFieldMask);
-                
-                [msg,compressedSize,uncompressedSize,offset,diskNumberStart] =...
-                    z64ExtraField.update(B32(2),B32(3),B32(5),B16(9));
-
-                if ~isempty(msg)
-                    ME = MException('Entry:BadZip64Extra',msg); 
-                    throwAsCaller(ME); 
-                end
-                
-                this.B64_ = [compressedSize;uncompressedSize;offset;offset;diskNumberStart];
-            else
-                this.B64_ = double([B32([2,3]);B32(5);B32(5);B16(9)]);
-            end
-
-            this.GeneralPurposeBit_ = io.GeneralPurposeBit(GPB);
-            
             fileName = char(rawFileName');
             
             this.IsDirectory_ = io.Util.isDirectory(fileName);
@@ -138,45 +101,86 @@ classdef Entry < handle
             
             this.RawFileName_ = rawFileName;
 
-            this.FileComment_ = commentField;
-            
-            this.B16_ = B16;
-            this.B32_ = B32;
-            
-            if readLocalHeader && ~(this.RawFileName_(end) == 47) 
-            
-                endOfCD = ftell(fid);
+            this.FileComment_ = commentField;            
 
-                fseek(fid,this.Offset_,'bof');
+            if ~this.IsDirectory_
+                
+                neededFlags = [B32(2),B32(3),B32(5),B16(9)] < 0;
 
-                status = io.Util.isa(fread(fid,[1,4],'*uint8'),'lfh');
+                %fields = org.apache.commons.compress.archivers.zip.ExtraFieldUtils.parse(extraFields',false);
 
-                if status
-                    % Skip over LFH to file name length field
-                    fseek(fid,22,'cof');
-                    % Read both lengths
-                    fileNameLen = fread(fid,1,'uint16');
-                    extrasFieldLen = fread(fid,1,'uint16'); % file name length
-                    % Read file name
-                    fileName = fread(fid,fileNameLen,'*uint8');
-                    if fileName ~= this.RawFileName_ 
-                        ME = MException('Entry:CorruptFile',...
-                            'Data in the central file directory and corresponding local file header does not match\nLikely the zip file is corrupt'); 
-                        throwAsCaller(ME);  
+                if any(neededFlags)
+                    if isempty(extraData)
+                         ME = MException('Entry:BadZip64Extra',...
+                            'The Zip64 extended information extra field is required, but not present'); 
+                        throwAsCaller(ME);                   
                     end
 
-                    % And extra fields
-                    this.ExtraFields_ = [this.ExtraFields_,...
-                        io.internal.parseExtraData(fread(fid,extrasFieldLen,'*uint8'))];
-                    
-                    this.FileOffset_ = uint64(ftell(fid));
+                    this.ExtraFields_ = io.internal.parseExtraData(extraData);
+                    z64ExtraFieldMask = ismember([this.ExtraFields_(:).Id],1);
+
+                    if sum(z64ExtraFieldMask) == 0
+                        ME = MException('Entry:BadZip64Extra',...
+                            'The Zip64 extended information extra field is required, but not present'); 
+                        throwAsCaller(ME);                
+                    end
+
+                    z64ExtraField = this.ExtraFields_(z64ExtraFieldMask);
+
+                    [msg,compressedSize,uncompressedSize,offset,diskNumberStart] =...
+                        z64ExtraField.update(B32(2),B32(3),B32(5),B16(9));
+
+                    if ~isempty(msg)
+                        ME = MException('Entry:BadZip64Extra',msg); 
+                        throwAsCaller(ME); 
+                    end
+
+                    this.B64_ = [compressedSize;uncompressedSize;offset;offset;diskNumberStart];
+                else
+                    this.B64_ = double([B32([2,3]);B32(5);B32(5);B16(9)]);
+                end
+
+                this.GeneralPurposeBit_ = io.GeneralPurposeBit(GPB);
+
+                this.B16_ = B16;
+                this.B32_ = B32;
+
+                if readLocalHeader
+
+                    endOfCD = ftell(fid);
+
+                    fseek(fid,this.Offset_,'bof');
+
+                    status = io.Util.isa(fread(fid,[1,4],'*uint8'),'lfh');
+
+                    if status
+                        % Skip over LFH to file name length field
+                        fseek(fid,22,'cof');
+                        % Read both lengths
+                        fileNameLen = fread(fid,1,'uint16');
+                        extrasFieldLen = fread(fid,1,'uint16'); % file name length
+                        % Read file name
+                        fileName = fread(fid,fileNameLen,'*uint8');
+                        if fileName ~= this.RawFileName_ 
+                            ME = MException('Entry:CorruptFile',...
+                                'Data in the central file directory and corresponding local file header does not match\nLikely the zip file is corrupt'); 
+                            throwAsCaller(ME);  
+                        end
+
+                        % And extra fields
+                        this.ExtraFields_ = [this.ExtraFields_,...
+                            io.internal.parseExtraData(fread(fid,extrasFieldLen,'*uint8'))];
+
+                        this.FileOffset_ = uint64(ftell(fid));
+
+                    end
+
+                    this.B64_(4) = uint64(ftell(fid));
+
+                    fseek(fid,endOfCD,'bof');
 
                 end
-                
-                this.B64_(4) = uint64(ftell(fid));
-
-                fseek(fid,endOfCD,'bof');
-
+            
             end
    
         end
@@ -311,7 +315,7 @@ classdef Entry < handle
         end         
         
         function boolean = get.IsTextFile( this )
-           boolean = logical(bitget(this.B16_(10),1,'uint16')); 
+           boolean = logical(bitget(this.B16_(10),1,'int16')); 
         end
         
         function boolean = get.CanBeExtracted( this )

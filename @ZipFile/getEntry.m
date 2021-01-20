@@ -1,5 +1,5 @@
 function entries = getEntry( this, which, includeDirectories )
-
+% getEntry  
     narginchk(1,3);
     
     if nargin < 3
@@ -31,28 +31,9 @@ function entries = getEntry( this, which, includeDirectories )
     if ischar(which) 
         entries = processCharInput();
     elseif iscell(which)
-    
+        
     elseif isnumeric(which)
-        if isvector(which)
-
-            minIdx = min(which);
-            maxIdx = max(which);
-
-            if (minIdx > 0) && (maxIdx <= numel(this.Files))
-                entries = this.Entries(this.FilesIndexMap(which));
-            else
-                if minIdx < 1
-                    msg = 'One or more of the provided indices is less than 1';
-                elseif maxIdx > numel(this.Files)
-                    msg = sprintf('One or more of the provided indices is greater than the number of files (%d)',numel(this.Files));
-                end
-               ME = MException('ZipFile:FindEntry',msg);
-               throwAsCaller(ME);
-            end                  
-        else
-           ME = MException('ZipFile:FindEntry','Indices into the entry list must be a scalar or a vector');
-           throwAsCaller(ME);
-        end
+        entries = processNumericInput();
     end 
 
     if isempty(entries)
@@ -111,7 +92,26 @@ function entries = getEntry( this, which, includeDirectories )
     end
 
     function entries = processNumericInput()
-        
+        if isvector(which)
+
+            minIdx = min(which);
+            maxIdx = max(which);
+
+            if (minIdx > 0) && (maxIdx <= numel(this.Files))
+                entries = this.Entries(this.FilesIndexMap(which));
+            else
+                if minIdx < 1
+                    msg = 'One or more of the provided indices is less than 1';
+                elseif maxIdx > numel(this.Files)
+                    msg = sprintf('One or more of the provided indices is greater than the number of entries (%d)',numel(this.Files));
+                end
+               ME = MException('ZipFile:FindEntry',msg);
+               throwAsCaller(ME);
+            end                  
+        else
+           ME = MException('ZipFile:FindEntry','Indices into the entry list must be a scalar or a vector');
+           throwAsCaller(ME);
+        end        
     end
         
 end
