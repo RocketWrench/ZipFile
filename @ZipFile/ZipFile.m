@@ -85,7 +85,10 @@ classdef ZipFile <  handle
                     this.load(file);
                 catch ME
                     throw(ME);
-                end
+                end                
+            else
+                this.createUI();
+                %TODO: UI?
             end
                 
         end
@@ -415,140 +418,7 @@ classdef ZipFile <  handle
                 throwAsCaller(ME);
             end           
         end
-        
-        function createGUI( this )
-            
-            border = javax.swing.UIManager.getLookAndFeel().getDefaults().getBorder('TextField.border');
-            color = border.getLineColor;
-            thick = border.getThickness;
-
-            innerBorder = javax.swing.BorderFactory.createMatteBorder(thick,thick,0,thick,color);
-
-            cls = 'com.mathworks.mwswing.MJPanel';
-            panelfile = javaObjectEDT(cls);
-            layout = com.jidesoft.swing.JideBoxLayout(panelfile,com.jidesoft.swing.JideBoxLayout.X_AXIS,2);
-            panelfile.setLayout(layout);
-            panelfile.setBorder(javax.swing.BorderFactory.createEmptyBorder(2,0,4,0));
-
-            panelzip = javaObjectEDT(cls,java.awt.BorderLayout);
-
-            panelselected = javaObjectEDT(cls,java.awt.BorderLayout);
-
-            labelfile = createLabel(startPath,border);
-
-            labelselected = createLabel(selstr,innerBorder);
-
-            labelzip = createLabel(zipstr,innerBorder);
-
-            cls = 'com.mathworks.mwswing.MJButton';
-            icon = com.mathworks.common.icons.IconEnumerationUtils.getIcon('open_ts_16.png');
-            browsebutton = handle(javaObjectEDT(cls,icon),'CallbackProperties');
-            browsebutton.setName('browse');
-
-            panelfile.add(labelfile,com.jidesoft.swing.JideBoxLayout.VARY);
-            panelfile.add(browsebutton,com.jidesoft.swing.JideBoxLayout.FIX);
-
-            panelselected.add(labelselected,'Center');
-
-            panelzip.add(labelzip,'Center')
-
-            cls = 'com.jidesoft.list.DualList';    
-            jDualList = handle(javaObjectEDT(cls),'CallbackProperties');
-            jDualList.setRightButtonPanelVisible(false);
-            jDualList.setSelectionMode(com.jidesoft.list.DefaultDualListModel.REMOVE_SELECTION);
-
-            jLeftPane = jDualList.getOriginalListPane();
-            
-            [panelfile,jFileNameLabel,button,panelselected,...
-                jSelectedLabel,panelzip,jZipLabel] =...
-                getComponents(this.CurrentDirectory,this.ZIP_TEXT,this.SEL_TEXT);
-            
-            button.ActionPerformedCallback = @this.onBrowse;
-            
-            jLeftPane.add(jZipLabel,'North');
-            
-            jRightPane = jDualList.getSelectedListPane();
-            
-            jRightPane.add(jSelectedLabel,'North');
-            
-            cls = 'com.mathworks.mwswing.MJPanel';
-            jPanel = javaObjectEDT(cls,java.awt.BorderLayout);
-            jPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(8,8,8,8));
-
-            jBottomPanel = javaObjectEDT(cls);
-            layout = com.jidesoft.swing.JideBoxLayout(jBottomPanel,com.jidesoft.swing.JideBoxLayout.Y_AXIS,2);
-            jBottomPanel.setLayout(layout);
-            jBottomPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(8,0,2,0));
-            
-            cls = 'com.jidesoft.dialog.ButtonPanel';
-            jButtonPanel = javaObjectEDT(cls);
-            jButtonPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(8,0,0,0));
-            
-            cls = 'com.mathworks.mwswing.MJButton';
-            icon = com.mathworks.common.icons.IconEnumerationUtils.getIcon('import_ts_16.png');
-            jProcessButton = handle(javaObjectEDT(cls,'Import',icon),'CallbackProperties');
-            jProcessButton.setEnabled(false);
-            jProcessButton.setName('process');
-            jProcessButton.ActionPerformedCallback = @this.onProcess;
-            
-            jButtonPanel.addButton(this.jProcessButton);
-            
-%             cls = 'com.jidesoft.swing.MeterProgressBar';
-            cls = 'com.mathworks.mwswing.MJProgressBar';
-            pb = javaObjectEDT(cls); 
-            pb.setString(' ');
-            pb.setValue(-1);
-%             pb.setStyle(com.jidesoft.swing.MeterProgressBar.STYLE_PLAIN);
-            pb.setStringPainted(true);
-            jImportProgress = pb;
-            
-            pb = javaObjectEDT(cls);
-            pb.setString(' ');
-            pb.setValue(-1);
-            pb.setStringPainted(true);            
-            jOverallProgress = pb; 
-
-            jBottomPanel.add(this.jOverallProgress,com.jidesoft.swing.JideBoxLayout.FLEXIBLE);
-            jBottomPanel.add(this.jImportProgress,com.jidesoft.swing.JideBoxLayout.FLEXIBLE);
-            jBottomPanel.add(jButtonPanel,com.jidesoft.swing.JideBoxLayout.FIX);
-
-            jPanel.add(panelfile,'North');
-            jPanel.add(this.jDualList,'Center');
-            jPanel.add(jBottomPanel,'South');
-
-            hFig = figure(...
-                'Name','Zip File Import Tool',...
-                'MenuBar','none',...
-                'Toolbar','none',...
-                'DockControls','off',...
-                'NumberTitle','off',...
-                'Resize','off',...
-                'DeleteFcn',@this.onFigureClose);
-
-            hPanel = uipanel(...
-                'Parent',hFig,...
-                'BorderType','none',...
-                'Units','norm',...
-                'Position',[0,0,1,1]);    
-
-            hgjavacomponent(...
-                'Parent',hPanel,...
-                'JavaPeer',jPanel,...
-                'Units','normalized',...
-                'Position',[0,0,1,1]); 
-            
-            hFig.Position(3) = 400;
-            
-            function label = createLabel( str, border )
-
-                cls = 'com.mathworks.mwswing.MJLabel';
-                label = javaObjectEDT(cls,[' ',str]);
-                label.setBorder(border);
-                label.setMinimumSize(java.awt.Dimension(100,24));
-            end     
-          
-            
-        end        
+  
     end
 
 end
