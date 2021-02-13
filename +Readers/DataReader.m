@@ -188,16 +188,11 @@ classdef DataReader < handle
                     skipped = org.apache.commons.io.IOUtils.skip(this.inputStream,n);                    
                 else
                     
-                    ME = MException('DataReader:overrequest',...
-                        'To many bytes requested. Bytes remaining %d.  Bytes reuested %d',...
-                        this.BytesRemaining_, n);
-                    throw(ME);                    
+                    this.throwOverRequesrError(n);                    
                 end
-            catch ME
-                ME = MException('DataReader:overrequest',...
-                    'To many bytes requested. Bytes remaining %d.  Bytes reuested %d',...
-                    this.BytesRemaining_, n);
-                throw(ME);                
+            catch
+                
+                this.throwOverRequesrError(n);                
             end
                     
           
@@ -244,13 +239,13 @@ classdef DataReader < handle
                     bytes = org.apache.commons.io.IOUtils.toByteArray(this.inputStream,n);
                     this.BytesRemaining_ = this.BytesRemaining_ - length(bytes);
                 else
-                    throwOverRequesrError()                   
+                    this.throwOverRequesrError(n);                   
                 end
             catch ME
                 if isa(ME,'matlab.exception.JavaException')                    
                     errorObj = ME.ExceptionObject;                    
                     if isa(errorObj,'java.io.IOException')                        
-                        throwOverRequesrError()
+                        this.throwOverRequesrError(n);
                     else                        
                         throwAsCaller(ME);
                     end
@@ -260,13 +255,14 @@ classdef DataReader < handle
                 end                
             end
             
-            function throwOverRequesrError()
-                ME = MException('DataReader:overrequest',...
-                    'To many bytes requested. Bytes remaining %d.  Bytes reuested %d',...
-                    this.BytesRemaining_, n);
-                throw(ME);            
-            end
         end
+        
+        function ME = throwOverRequesrError( this, n )
+            ME = MException('DataReader:overrequest',...
+                'To many bytes requested. Bytes remaining %d.  Bytes reuested %d',...
+                this.BytesRemaining_, n);
+            throw(ME);            
+        end        
 
         function [ n, sz, ME ] = validateDimension( this, n )
 
@@ -355,14 +351,10 @@ function [input,fileLength,fileName] = loadFromFile()
     if ~isequal(fileName,0)
         fileName = fullfile(path,fileName);
         file = java.io.File(fileName);
-        try
-            fileLength = java.nio.file.Files.size(file.toPath);
-        catch
-            fileLength = file.length();
-        end
+        fileLength = java.nio.file.Files.size(file);
         input = org.apache.commons.io.FileUtils.openInputStream(file);
     else
-        fileName = '';
+        fileName = [];
     end 
  
 end
