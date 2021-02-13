@@ -1,6 +1,4 @@
 function listing = zipdir( zipFileName )
-% zipdir - gets a listing of archive file contents
-
 
     narginchk(0,1);
     nargoutchk(0,1);
@@ -9,14 +7,11 @@ function listing = zipdir( zipFileName )
     
     if (nargin == 0)
         
-        filter = {'*.zip;*.jar;*.docx','Archive Files(*.zip.*.jar,*.docx)'};
-        [file,path] = uigetfile(filter,'Select archive file');
+        zipFileName = uigetfile('*.zip','Select zip file');
         
-        if isequal(file,0)
+        if isequal(zipFileName,0)
             return
-        end 
-        
-        zipFileName = fullfile(path,file);
+        end        
     end
 
     [fid,errmsg] = fopen(zipFileName);
@@ -67,7 +62,7 @@ function listing = zipdir( zipFileName )
             item.uncompressedsize = double(entry.getSize());
             item.isdir = entry.isDirectory();
             item.canbeextracted = zipFile.canReadEntryData(entry);
-            item.datenum = datenum([1970,1,1,0,0,double(entry.getLastModifiedDate.getTime)/1000]);
+            item.datenum = double(entry.getLastModifiedDate.getTime);
         end
     end
 end
