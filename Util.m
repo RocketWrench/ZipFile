@@ -355,6 +355,27 @@ classdef Util
                throwAsCaller(ME);
             end
         end
+%-------------------------------------------------------------------------- 
+        function file = uigetzipfile( path )
+            
+            if nargin == 0
+                path = pwd;
+            end
+            
+            filter = {'*.zip','Zip File (*.zip)';...
+                      '*.jar;*.war;*.ear;*.rar','Java Files (*.jar,*.war,*.rar,*.rar)';...
+                      '*.docx;*.docm','Office Open (*.docx,*.docm)';...
+                      '*.*',  'All Files (*.*)'};
+                  
+            [filename,path] = uigetfile(filter,'Select zip file',path);
+            
+            if isequal(filename,0)
+                file = [];
+                return
+            end
+            
+            file = fullfile(path,filename);
+        end
     end    
 end
 
